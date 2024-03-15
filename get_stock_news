@@ -1,0 +1,52 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Mar 15 14:08:24 2024
+
+@author: qiusi
+"""
+
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from datetime import datetime
+import pandas as pd
+import time
+
+def get_news(news_page):
+    # Configure Chrome WebDriver
+    driver_path = r'C:\Users\qiusi\OneDrive\Documents\8.GATECH\chromedriver.exe'
+    service = Service(driver_path)  # Provide the path to chromedriver executable
+    driver = webdriver.Chrome(service = service)
+    
+    # Navigate to Google News
+    driver.get(news_page)
+    
+    # Wait for the page to load
+    time.sleep(5)
+    
+    # Find all article elements
+    articles = driver.find_elements(By.XPATH, "//article[@class='IFHyqb DeXSAc']")
+    
+    result = []
+    for article in articles:
+        title_element = article.find_element(By.XPATH, ".//a[@class='JtKRv']")
+        title = title_element.text.strip()
+        link = title_element.get_attribute('href')
+        timestamp = article.find_element(By.XPATH, ".//time").get_attribute('datetime')
+        published_time = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+        result.append({'title': title, 
+                       'link': link, 
+                       'published_time': published_time})    
+        
+    # Quit WebDriver
+    driver.quit()
+    
+    # Sort articles by published time in descending order
+    sorted_articles = sorted(result, key=lambda x: x['published_time'], reverse=True)
+    df_sorted_articles = pd.DataFrame(sorted_articles)
+    return df_sorted_articles
+
+# Get Nvidia-related news articles
+news_page = 'https://news.google.com/search?q=federal%20reserve%20rules&hl=en-US&gl=US&ceid=US%3Aen'
+frb_news = get_news(news_page)
+
